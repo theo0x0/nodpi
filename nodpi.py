@@ -78,10 +78,6 @@ def fragemtn_data(conn, conn_to):
             fake_length = random.randint(1, real_length)
             head = type + bytes.fromhex("03") + random.randbytes(1)
 
-            if random.randint(0, 1) == 0:
-                conn_to.send(head + int(0).to_bytes(2))
-                continue
-
             conn_to.send(head  + int(fake_length).to_bytes(2) + conn.recv(fake_length))
             real_length -= fake_length
             
