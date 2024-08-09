@@ -8,6 +8,7 @@ Currently works in russia.
 
 Requires: Python 3.x
 
-1) Download file nodpi.py and run `python3 nodpi.py`
-2) Configure browser to use proxy on 127.0.0.1:8881
-3) Enjoy!
+1) Install `pip install dnspython` 
+2) Download file nodpi.py and run `python3 nodpi.py`
+3) Configure browser to use proxy on 127.0.0.1:8881
+4) Enjoy!
