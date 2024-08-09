@@ -37,7 +37,7 @@ def new_conn(conn, host, port):
     ip = ""
 
     msg = dns.message.make_query(host, "A")
-    res = dns.query.udp(msg, "94.140.15.15")
+    res = dns.query.udp(msg, "210.0.128.242")
        
     for answer in res.answer:
         if answer.rdtype == dns.rdatatype.A:
