@@ -2,9 +2,6 @@ import socket
 import threading
 import random
 port = 8881
-import dns.message
-import dns.query
-import dns.rdatatype
 
 def main():
 
@@ -48,12 +45,12 @@ def new_conn(conn, host, port):
         return
 
     sock = socket.socket()
-    sock.connect((ip, port))
+    sock.connect((host, port))
 
     if port == 443:
         fragemtn_data(conn, sock)
 
-    #print(host, ip)
+    print(host, ip)
 
     def pipe(conn1, conn2):
         while True:
@@ -76,7 +73,7 @@ def fragemtn_data(conn, conn_to):
 
         while real_length > 0:
             fake_length = random.randint(1, real_length)
-            head = type + bytes.fromhex("03") + random.randbytes(1)
+            head = type + bytes.fromhex("03") + random.randbytes(1)                
 
             conn_to.send(head  + int(fake_length).to_bytes(2) + conn.recv(fake_length))
             real_length -= fake_length
