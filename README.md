@@ -15,3 +15,5 @@ Requires: Python 3.x
 ## Known Bugs
 
 - Doesn't bypass IP block
+- Only TCP
+- Doesn't work for HTTP only
