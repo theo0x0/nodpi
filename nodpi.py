@@ -10,7 +10,7 @@ def main():
     server.bind(('0.0.0.0', port))
     server.listen()
 
-    print('Прокси запущено на порту ', port)
+    print(f'Прокси запущено на 127.0.0.1:{port}')
 
     while True:
         conn, _ = server.accept()
@@ -31,26 +31,12 @@ def main():
 
 def new_conn(conn, host, port):
 
-    ip = ""
-
-    msg = dns.message.make_query(host, "A")
-    res = dns.query.udp(msg, "210.0.128.242")
-       
-    for answer in res.answer:
-        if answer.rdtype == dns.rdatatype.A:
-            ip = answer[0].address
-
-    if ip == "":
-        conn.close()
-        return
-
     sock = socket.socket()
     sock.connect((host, port))
 
     if port == 443:
         fragemtn_data(conn, sock)
 
-    print(host, ip)
 
     def pipe(conn1, conn2):
         while True:
