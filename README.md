@@ -8,7 +8,7 @@ Currently works in russia.
 
 Requires: Python 3.x
 
-1) Download file nodpi.py and run `python3 nodpi.py`
+1) Download file nodpi.py and run `python3 nodpi.py` or open run.bat
 2) Configure browser to use proxy on 127.0.0.1:8881
 3) Enjoy!
 
