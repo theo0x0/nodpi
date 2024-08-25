@@ -20,7 +20,7 @@ def main():
         
         if type != b"CONNECT":
             conn.close()
-            print(1, type, host, target)
+            #print(1, type, host, target)
             continue
 
         host, traget_port = target.split(b":")
@@ -59,9 +59,9 @@ def fragemtn_data(conn, conn_to):
 
         while real_length > 0:
             fake_length = random.randint(1, real_length)
-            head = type + bytes.fromhex("03") + random.randbytes(1)                
+            head = type + bytes.fromhex("03") + bytes([random.randint(0, 255)])                
 
-            conn_to.send(head  + int(fake_length).to_bytes(2) + conn.recv(fake_length))
+            conn_to.send(head  + int(fake_length).to_bytes(2, byteorder='big') + conn.recv(fake_length))
             real_length -= fake_length
             
 
