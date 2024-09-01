@@ -17,3 +17,4 @@ Requires: Python 3.x
 - Doesn't bypass IP block
 - Only TCP
 - Doesn't work for HTTP only
+- Not working with sites with strict TLS version
