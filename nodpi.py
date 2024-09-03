@@ -55,21 +55,22 @@ def fragemtn_data(conn, conn_to):
         type, ver = conn.recv(1), conn.recv(2)
 
         real_length = int.from_bytes(conn.recv(2), 'big')
-        fake_length = real_length
+        data = conn.recv(real_length)
+        parts = []
 
-        while real_length > 0:
-            fake_length = random.randint(1, real_length)
-            head = type + bytes.fromhex("03") + bytes([random.randint(0, 255)]) + int(fake_length).to_bytes(2, byteorder='big')                
-            real_length -= fake_length 
-            
-            fake2 = random.randint(1, fake_length)
-            conn_to.send(head + conn.recv(fake2))
-            fake_length -= fake2
+        while data:
+            part_len = random.randint(1, len(data))
+            parts.append(type + bytes.fromhex("03") + bytes([random.randint(0, 255)]) + int(part_len).to_bytes(2, byteorder='big')  + data[0:part_len])
+            data = data[part_len:]
 
-            while fake_length:
-                fake2 = random.randint(1, fake_length)
-                conn_to.send(conn.recv(fake2))
-                fake_length -= fake2 
+        data = b''.join(parts)
+
+        while data:
+            data_len = random.randint(1, len(data))
+            conn_to.send(data[0:data_len])
+            data = data[data_len:]
+
+        
             
 
 if __name__ == "__main__":
