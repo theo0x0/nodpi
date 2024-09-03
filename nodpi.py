@@ -1,77 +1,71 @@
 import socket
 import threading
 import random
+import asyncio
+
 port = 8881
 
-def main():
-
-    server = socket.socket()
-    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    server.bind(('0.0.0.0', port))
-    server.listen()
-
+async def main():
+    server = await asyncio.start_server(new_conn, '127.0.0.1', port)
     print(f'Прокси запущено на 127.0.0.1:{port}')
+    await server.serve_forever()
 
-    while True:
-        conn, _ = server.accept()
-        http_data = conn.recv(1500)
+async def pipe(reader, writer):
+    while not reader.at_eof() and not writer.is_closing():
+        try:
+            writer.write(await reader.read(1500))
+            await writer.drain()
+        except:
+            break
 
-        type, target = http_data.split(b"\r\n")[0].split(b" ")[0:2]
+    writer.close()
+
+async def new_conn(local_reader, local_writer):
+    http_data = await local_reader.read(1500)
+    type, target = http_data.split(b"\r\n")[0].split(b" ")[0:2]
+    
+    if type != b"CONNECT":
+        local_writer.close()
+        return
+
+    host, port = target.split(b":")
+
+    local_writer.write(b'HTTP/1.1 200 OK\n\n')
+    await local_writer.drain()
+
+    try:
+        remote_reader, remote_writer = await asyncio.open_connection(host, port)
+    except:
+        local_writer.close()
+        return
+
+    if port == b'443':
+        await fragemtn_data(local_reader, remote_writer)
+
+    asyncio.create_task(pipe(local_reader, remote_writer))
+    asyncio.create_task(pipe(remote_reader, local_writer))
+
+async def fragemtn_data(local_reader, remote_writer):
+    await local_reader.read(5)
+
+    data = await local_reader.read(1500)
+    parts = []
+
+    while data:
+        part_len = random.randint(1, len(data))
+        parts.append(bytes.fromhex("1603") + bytes([random.randint(0, 255)]) + int(part_len).to_bytes(2, byteorder='big') + data[0:part_len])
         
-        if type != b"CONNECT":
-            conn.close()
-            #print(1, type, host, target)
-            continue
+        data = data[part_len:]
 
-        host, traget_port = target.split(b":")
+    data = b''.join(parts)
 
-        conn.send(b'HTTP/1.1 200 OK\n\n')
-        threading.Thread(target=new_conn,
-                         args=(conn, host.decode(), int(traget_port),)).start()
+    while data:
+        data_len = random.randint(1, len(data))
+        remote_writer.write(data[0:data_len])
+        await remote_writer.drain()
 
-def new_conn(conn, host, port):
-
-    sock = socket.socket()
-    sock.connect((host, port))
-
-    if port == 443:
-        fragemtn_data(conn, sock)
-
-
-    def pipe(conn1, conn2):
-        while True:
-            try:
-                conn2.send(conn1.recv(1500))
-
-            except:
-                conn1.close()
-                conn2.close()
-                break
-
-    threading.Thread(target=pipe, args=(conn, sock)).start()
-    threading.Thread(target=pipe, args=(sock, conn)).start()
-
-def fragemtn_data(conn, conn_to):
-        type, ver = conn.recv(1), conn.recv(2)
-
-        real_length = int.from_bytes(conn.recv(2), 'big')
-        data = conn.recv(real_length)
-        parts = []
-
-        while data:
-            part_len = random.randint(1, len(data))
-            parts.append(type + bytes.fromhex("03") + bytes([random.randint(0, 255)]) + int(part_len).to_bytes(2, byteorder='big')  + data[0:part_len])
-            data = data[part_len:]
-
-        data = b''.join(parts)
-
-        while data:
-            data_len = random.randint(1, len(data))
-            conn_to.send(data[0:data_len])
-            data = data[data_len:]
-
-        
+        data = data[data_len:]
             
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
