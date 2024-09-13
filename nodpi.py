@@ -29,7 +29,11 @@ async def new_conn(local_reader, local_writer):
         local_writer.close()
         return
 
-    host, port = target.split(b":")
+    try:
+        host, port = target.split(b":")
+    except:
+        local_writer.close()
+        return
 
     local_writer.write(b'HTTP/1.1 200 OK\n\n')
     await local_writer.drain()
