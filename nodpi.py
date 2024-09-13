@@ -4,6 +4,7 @@ import random
 import asyncio
 
 port = 8881
+blocked = open("russia-blacklist.txt", "br").read().split()
 
 async def main():
     server = await asyncio.start_server(new_conn, '127.0.0.1', port)
@@ -46,10 +47,17 @@ async def new_conn(local_reader, local_writer):
     asyncio.create_task(pipe(remote_reader, local_writer))
 
 async def fragemtn_data(local_reader, remote_writer):
-    await local_reader.read(5)
+    head = await local_reader.read(5)
 
     data = await local_reader.read(1500)
     parts = []
+
+
+    if all([data.find(site) == -1 for site in blocked]):
+        remote_writer.write(head + data)
+        await remote_writer.drain()
+
+        return
 
     while data:
         part_len = random.randint(1, len(data))
