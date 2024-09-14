@@ -118,20 +118,20 @@ async def new_conn(local_reader, local_writer):
         local_writer.close()
         return
 
-    print(5)
+
 
     head = await local_reader.read(5)
     data = await local_reader.read(1500)
     
-    print(1)
+
 
     if local_port == 443:
         host = get_domain(data)
         port = 443
 
-        ip = resolve(host, "8.8.8.8")
+        ip = resolve(host, "9.9.9.9")
 
-    print(2)
+
         
     try:
         remote_reader, remote_writer = await asyncio.open_connection(ip, port)
@@ -139,7 +139,6 @@ async def new_conn(local_reader, local_writer):
         local_writer.close()
         return
 
-    print(4)
     
 
     if local_port == 443:
@@ -148,8 +147,6 @@ async def new_conn(local_reader, local_writer):
         remote_writer.write(head + data)
         await remote_writer.drain()
 
-    print(3)
-       
 
     asyncio.create_task(pipe(local_reader, remote_writer))
     asyncio.create_task(pipe(remote_reader, local_writer))
