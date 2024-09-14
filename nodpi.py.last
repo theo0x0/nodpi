@@ -11,52 +11,38 @@ blocked = open("russia-blacklist.txt", "br").read().split()
 
 def get_domain(data):
 
-    data = data[(4 + 2 + 32):]
+    data = data[(4 + 2 + 32 + 1 + 32):]
     
-    len2 = int.from_bytes(data[:1], byteorder='big')
-    data = data[(1 + len2):]
+    len_2 = int.from_bytes(data[:2])
+    data = data[2 + len_2 + 2:]
 
-    len_2 = int.from_bytes(data[:2], byteorder='big')
-    data = data[2 + len_2:]
-    
-    len2 = int.from_bytes(data[:1], byteorder='big')
-    data = data[(1 + len2):]
-
-    ext_len = int.from_bytes(data[:2], byteorder='big')
+    ext_len = int.from_bytes(data[:2])
     data = data[2:]
 
 
     offset = 0
     while offset < ext_len:
-        type = int.from_bytes(data[offset:offset+2], byteorder='big')
-        len2 = int.from_bytes(data[offset+2:offset+4], byteorder='big')
+        type = int.from_bytes(data[offset:offset+2])
+        len = int.from_bytes(data[offset+2:offset+4])
 
         if type != 0:
-            offset += len2 + 4
+            offset += len + 4
             continue
 
-        return data[offset+4+2+1+2:offset+len2+4].decode()
-        
-def is_blocked(host):
-    for site in blocked:
-        if host.find(site) >= 0:
-            return True
-            
-    return False
+        return data[offset+4+2+1+2:offset+len+4]
 
 class LocalResolve(BaseResolver):
     def resolve(self,request,handler):
-        
-        q = str(request.questions[0].qname).encode()
-        
-        if is_blocked(q):
-            res = request.reply()
-            res.add_answer(RR(request.questions[0].qname,QTYPE.A,rdata=A("127.0.0.1"),ttl=60))
-            
-            return res
+        print(request.questions[0].qname)
         
         
-        return DNSRecord.parse(request.send("8.8.8.8"))
+        if all([request.questions[0].qname.matchSuffix(site) == False for site in blocked]):
+            return DNSRecord.parse(request.send("8.8.8.8"))
+
+        res  = request.reply()
+        res.add_answer(RR(request.questions[0].qname,QTYPE.A,rdata=A("127.0.0.1"),ttl=60))
+        
+        return res
 
 
 async def main():
@@ -94,62 +80,59 @@ async def connect_proxy(r, w):
     w.write(b'HTTP/1.1 200 OK\n\n')
     await w.drain()
 
-    return str(host), int(port)
+    return host, int(port)
     
 
-def resolve(host, server):
-    q = DNSRecord()
-    q.add_question(DNSQuestion(host))
-    
-    for r in DNSRecord.parse(q.send(server, timeout=5)).rr:
-        if r.rtype == 1:
-            return str(r.rdata)
-    
 async def new_conn(local_reader, local_writer):
 
     _, local_port = local_writer.transport.get_extra_info('socket').getsockname()
 
+
     try:
         if local_port == 8881:
             host, port = await connect_proxy(local_reader, local_writer)
-            ip = resolve(host, "127.0.0.1")
+
+            q = DNSRecord()
+            q.add_question(DNSQuestion(host))
+            ip = DNSRecord.parse(q.send("127.0.0.1")).rr[0].rdata
+            ip = str(ip)
 
     except:
         local_writer.close()
         return
 
-    print(5)
-
     head = await local_reader.read(5)
     data = await local_reader.read(1500)
-    
-    print(1)
+
 
     if local_port == 443:
         host = get_domain(data)
         port = 443
 
-        ip = resolve(host, "8.8.8.8")
+        q = DNSRecord()
+        q.add_question(DNSQuestion(host))
+        ip = DNSRecord.parse(q.send("8.8.8.8")).rr[0].rdata
+        ip = str(ip)
 
-    print(2)
-        
+    elif local_port != 8881:
+        local_writer.close()
+        return
+
+    print(ip, host, port)
+    
+
     try:
         remote_reader, remote_writer = await asyncio.open_connection(ip, port)
     except:
         local_writer.close()
         return
-
-    print(4)
     
 
-    if local_port == 443:
+    if local_port != 8881 and port == 443 and not all([host.find(site) == -1 for site in blocked]):
         await fragemtn_data(data, local_reader, remote_writer)
     else:
         remote_writer.write(head + data)
         await remote_writer.drain()
-
-    print(3)
-       
 
     asyncio.create_task(pipe(local_reader, remote_writer))
     asyncio.create_task(pipe(remote_reader, local_writer))
