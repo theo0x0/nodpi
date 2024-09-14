@@ -125,15 +125,17 @@ async def new_conn(local_reader, local_writer):
     
 
 
-    if local_port == 443:
-        host = get_domain(data)
-        port = 443
-
-        ip = resolve(host, "9.9.9.9")
 
 
         
     try:
+
+        if local_port == 443:
+            host = get_domain(data)
+            port = 443
+
+            ip = resolve(host, "9.9.9.9")
+
         remote_reader, remote_writer = await asyncio.open_connection(ip, port)
     except:
         local_writer.close()
