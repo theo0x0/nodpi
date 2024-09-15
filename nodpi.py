@@ -5,6 +5,7 @@ import asyncio
 
 port = 8881
 blocked = open("russia-blacklist.txt", "br").read().split()
+tasks = []
 
 async def main():
     server = await asyncio.start_server(new_conn, '127.0.0.1', port)
@@ -47,8 +48,8 @@ async def new_conn(local_reader, local_writer):
     if port == b'443':
         await fragemtn_data(local_reader, remote_writer)
 
-    asyncio.create_task(pipe(local_reader, remote_writer))
-    asyncio.create_task(pipe(remote_reader, local_writer))
+    tasks.append(asyncio.create_task(pipe(local_reader, remote_writer)))
+    tasks.append(asyncio.create_task(pipe(remote_reader, local_writer)))
 
 async def fragemtn_data(local_reader, remote_writer):
     head = await local_reader.read(5)
@@ -73,8 +74,10 @@ async def fragemtn_data(local_reader, remote_writer):
 
     while data:
         data_len = random.randint(1, len(data))
+
         remote_writer.write(data[0:data_len])
         await remote_writer.drain()
+
 
         data = data[data_len:]
             
