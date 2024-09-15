@@ -8,6 +8,7 @@ from dnslib.dns import DNSRecord, RR, QTYPE, A, DNSQuestion
 
 port = 8881
 blocked = open("russia-blacklist.txt", "br").read().split()
+tasks = []
 
 def get_domain(data):
 
@@ -55,8 +56,7 @@ class LocalResolve(BaseResolver):
             
             return res
         
-        
-        return DNSRecord.parse(request.send("8.8.8.8"))
+        return DNSRecord.parse(request.send("9.9.9.9"))
 
 
 async def main():
@@ -80,6 +80,7 @@ async def pipe(reader, writer):
         except:
             break
 
+
     writer.close()
 
 async def connect_proxy(r, w):
@@ -94,7 +95,7 @@ async def connect_proxy(r, w):
     w.write(b'HTTP/1.1 200 OK\n\n')
     await w.drain()
 
-    return str(host), int(port)
+    return host.decode(), int(port)
     
 
 def resolve(host, server):
@@ -123,10 +124,6 @@ async def new_conn(local_reader, local_writer):
     head = await local_reader.read(5)
     data = await local_reader.read(1500)
     
-
-
-
-
         
     try:
 
@@ -149,9 +146,8 @@ async def new_conn(local_reader, local_writer):
         remote_writer.write(head + data)
         await remote_writer.drain()
 
-
-    asyncio.create_task(pipe(local_reader, remote_writer))
-    asyncio.create_task(pipe(remote_reader, local_writer))
+    tasks.append(asyncio.create_task(pipe(local_reader, remote_writer)))
+    tasks.append(asyncio.create_task(pipe(remote_reader, local_writer)))
 
 async def fragemtn_data(data, local_reader, remote_writer):
 
