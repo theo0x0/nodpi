@@ -10,14 +10,15 @@ from scapy.layers.inet import IP, TCP
 from threading import Thread
 import time
 import ifaddr
-from scapy.sendrecv import AsyncSniffer, sendp
-from os import urandom
+
 
 port = 8881
 blocked = open("russia-blacklist.txt", "br").read().split()
 tasks = []
 packets = {}
 ttl = {}
+local_socket = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.htons(3))
+
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -29,62 +30,59 @@ def get_local_ip():
 
 local_ip = get_local_ip()
 
-def send_packet(port):
+def get_local_interface():
+    ifaces = ifaddr.get_adapters()
+
+    for iface in ifaces:
+        for ip in iface.ips:
+            if local_ip == ip.ip:
+                return iface.name
+
+local_socket.bind((get_local_interface(), 0))
+
+def send_packet(ip_adr, port):
     time.sleep(0.1)
 
-    
-    while not ttl.get(port) or not packets.get(port):
-        pass
+    adr = ip_adr + str(port)
 
-    if ttl[port] > 64:
-        distance=128-ttl[port]
+    if ttl[ip_adr] > 64:
+        distance=128-ttl[ip_adr]
     else:
-        distance=64-ttl[port]
+        distance=64-ttl[ip_adr]
 
-    packets[port]["p"].payload.chksum=None
-    packets[port]["p"].payload.len=None
-    packets[port]["p"].payload.ttl=random.randint(1, distance)
+    packets[adr]["p"].payload.chksum=None
+    packets[adr]["p"].payload.len=None
+    packets[adr]["p"].payload.ttl=random.randint(1, distance)
 
-    packets[port]["p"].payload.payload.chksum=None
-    packets[port]["p"].payload.payload.seq = packets[port]["ack"]
-    packets[port]["p"].payload.payload.payload = Raw(urandom(random.randint(1, len(packets[port]["p"].payload.payload.payload) + 1)))
-    packets[port]["p"].payload.payload.flags = packets[port]["p"].payload.payload.flags.value | 8
+    packets[adr]["p"].payload.payload.chksum=None
+    packets[adr]["p"].payload.payload.seq = packets[adr]["ack"]
+    packets[adr]["p"].payload.payload.payload = Raw(random.randbytes(random.randint(1, len(packets[adr]["p"].payload.payload.payload) + 1)))
+    packets[adr]["p"].payload.payload.flags = packets[adr]["p"].payload.payload.flags.value | 8
 
-    sendp(packets[port]["p"].build(), verbose=False)
+    local_socket.send(packets[adr]["p"].build())
 
-
-
-ports = []
-
-
-def listen_interface(p):
-
+def listen_interface():
+    while True:
+        p = Ether(local_socket.recv(1500))
         ip = p.payload
         tcp = ip.payload
 
         if ip.name != "IP":
-            return
+            continue
 
         if tcp.name != "TCP":
-            return
-
-        
-        if tcp.sport in ports:
-            if packets.get(tcp.sport) == None:
-                packets[tcp.sport] = {}
-
-            packets[tcp.sport]["p"] = p
-            packets[tcp.sport]["ack"] = tcp.seq + len(tcp.payload)
-            
-        if tcp.dport in ports:
-            ttl[tcp.dport] = ip.ttl
-            
-        del tcp
-        del ip
+            continue
 
 
-AsyncSniffer(prn=listen_interface, store=False).start()
+        #if ip.dst != local_ip and ip.dst != "127.0.0.1":
+        adr = ip.dst + str(tcp.sport)
+    
+        if packets.get(adr) == None:
+            packets[adr] = {}
 
+        packets[adr]["p"] = p
+        packets[adr]["ack"] = tcp.seq + len(tcp.payload)
+        ttl[ip.src] = ip.ttl
 
 def get_domain(data):
 
@@ -146,9 +144,9 @@ async def main():
 
     print(f'DNS сервер запущен {local_ip}')
 
+    Thread(target=listen_interface).start()
+
     await proxy_server.serve_forever()
-    
-    
 
 async def pipe(reader, writer):
     while not reader.at_eof() and not writer.is_closing():
@@ -217,28 +215,20 @@ async def new_conn(local_reader, local_writer):
         local_writer.close()
         return
 
-
     
 
     if local_port == 443:
-
-        await fragemtn_data(data, local_reader, remote_writer)
-
+        await fragemtn_data(data, local_reader, remote_writer, ip)
     else:
         remote_writer.write(head + data)
         await remote_writer.drain()
 
-    #asyncio.create_task(pipe(local_reader, remote_writer))
-    #asyncio.create_task(pipe(remote_reader, local_writer))
     tasks.append(asyncio.create_task(pipe(local_reader, remote_writer)))
     tasks.append(asyncio.create_task(pipe(remote_reader, local_writer)))
 
-async def fragemtn_data(data, local_reader, remote_writer):
+async def fragemtn_data(data, local_reader, remote_writer, ip):
 
     _, local_port = remote_writer.transport.get_extra_info('socket').getsockname()
-
-    ports.append(local_port)
-    
 
     parts = []
 
@@ -255,18 +245,10 @@ async def fragemtn_data(data, local_reader, remote_writer):
         remote_writer.write(data[0:data_len])
         await remote_writer.drain()
 
-        if random.randint(0, 5) == 0:
-
-            send_packet(local_port)
-            pass
+        if random.randint(0, 3) == 0:
+            send_packet(ip, local_port)
 
         data = data[data_len:]
-        
-
-    ports.remove(local_port)
-    del packets[local_port]
-        
-
             
 
 if __name__ == "__main__":
