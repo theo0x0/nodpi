@@ -10,6 +10,7 @@ tasks = []
 async def main():
     server = await asyncio.start_server(new_conn, '127.0.0.1', port)
     print(f'Прокси запущено на 127.0.0.1:{port}')
+    print("Не закрывайте окно")
     await server.serve_forever()
 
 async def pipe(reader, writer):
