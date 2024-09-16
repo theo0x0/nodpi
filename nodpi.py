@@ -9,7 +9,6 @@ from scapy.packet import Raw
 from scapy.layers.inet import IP, TCP
 from threading import Thread
 import time
-import ifaddr
 from scapy.sendrecv import AsyncSniffer, sendp
 from os import urandom
 
