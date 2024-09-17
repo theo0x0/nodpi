@@ -82,6 +82,10 @@ async def fragemtn_data(local_reader, remote_writer):
 
         data = data[data_len:]
             
+def debug():
+    while True:
+        pass
 
 if __name__ == "__main__":
+    threading.Thread(target=debug).start()
     asyncio.run(main())
