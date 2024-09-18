@@ -8,7 +8,7 @@ blocked = open("russia-blacklist.txt", "br").read().split()
 tasks = []
 
 async def main():
-    server = await asyncio.start_server(new_conn, '127.0.0.1', port)
+    server = await asyncio.start_server(new_conn, '0.0.0.0', port)
     print(f'Прокси запущено на 127.0.0.1:{port}')
     print("Не закрывайте окно")
     await server.serve_forever()
@@ -25,15 +25,16 @@ async def pipe(reader, writer):
 
 async def new_conn(local_reader, local_writer):
     http_data = await local_reader.read(1500)
-    type, target = http_data.split(b"\r\n")[0].split(b" ")[0:2]
-    
-    if type != b"CONNECT":
+
+
+    try:
+        type, target = http_data.split(b"\r\n")[0].split(b" ")[0:2]
+        host, port = target.split(b":")
+    except:
         local_writer.close()
         return
 
-    try:
-        host, port = target.split(b":")
-    except:
+    if type != b"CONNECT":
         local_writer.close()
         return
 
@@ -54,6 +55,7 @@ async def new_conn(local_reader, local_writer):
 
 async def fragemtn_data(local_reader, remote_writer):
     head = await local_reader.read(5)
+    
 
     data = await local_reader.read(1500)
     parts = []
@@ -87,5 +89,6 @@ def debug():
         pass
 
 if __name__ == "__main__":
+    print("Версия: 1.1")
     threading.Thread(target=debug).start()
     asyncio.run(main())
