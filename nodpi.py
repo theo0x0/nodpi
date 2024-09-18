@@ -4,7 +4,7 @@ import random
 import asyncio
 
 port = 8881
-blocked = open("russia-blacklist.txt", "br").read().split()
+blocked = None
 tasks = []
 
 async def main():
@@ -91,4 +91,5 @@ def debug():
 if __name__ == "__main__":
     print("Версия: 1.1")
     threading.Thread(target=debug).start()
+    blocked = open("russia-blacklist.txt", "br").read().split()
     asyncio.run(main())
