@@ -1,1 +1,0 @@
-python nodpi.py
