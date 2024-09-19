@@ -1,7 +1,7 @@
 from dnslib.server import DNSServer, BaseResolver
 from dnslib.dns import DNSRecord, RR, QTYPE, A, DNSQuestion
-from nodpi import config
 import asyncio
+from nodpi import is_blocked, local_ip
 
 def resolve(host, server):
     q = DNSRecord()
@@ -13,11 +13,10 @@ def resolve(host, server):
 
 
 
-
 class LocalResolve(BaseResolver):
     def resolve(self,request,handler):
         
-        q = str(request.questions[0].qname).encode()
+        q = str(request.questions[0].qname)
         
         if is_blocked(q):
             res = request.reply()

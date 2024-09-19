@@ -40,7 +40,7 @@ async def proxy_conn(r, w):
       
 
 async def ssl_conn(r, w):
-    make_pipe(r, w, host, port)
+    await make_pipe(r, w)
 
 
 
@@ -62,7 +62,6 @@ async def main():
         dns_server.start_thread()
 
         print(f'DNS сервер запущен {local_ip}, 127.0.0.1')
-        servers.append(server)
 
     if config["fake"]:
         from fake import AsyncSniffer, listen_interface
@@ -94,9 +93,12 @@ async def make_pipe(local_reader, local_writer, host = None, port = 443):
         host = get_domain(data)
 
     if config["dns"]:
-        host = resolve(host, config["dns_server"])
+        from dns import resolve
+        ip = resolve(host, config["dns_server"])
+    else:
+        ip = host
     
-    remote_reader, remote_writer = await asyncio.open_connection(host, port)
+    remote_reader, remote_writer = await asyncio.open_connection(ip, port)
 
 
     if is_blocked(host) and port == 443:
@@ -152,16 +154,15 @@ def debug():
     while 1:
         pass         
 
+config = yaml.safe_load(open("config.txt").read())
+blocked = open("russia-blacklist.txt").read().split()
+local_ip = get_local_ip()
 
 if __name__ == "__main__":
     Thread(target=debug).start()
 
     print("Версия: 2.0")
     print("Не закрывайте окно")
-
-    config = yaml.safe_load(open("config.txt").read())
-    blocked = open("russia-blacklist.txt").read().split()
-    local_ip = get_local_ip()
 
     asyncio.run(main())
     
