@@ -2,7 +2,7 @@ import threading
 def debug():
     while 1:
         pass      
-Thread(target=debug).start()  
+threading.Thread(target=debug).start()  
 
 import socket
 import random
