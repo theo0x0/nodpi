@@ -53,6 +53,7 @@ async def new_conn(local_reader, local_writer):
     tasks.append(asyncio.create_task(pipe(local_reader, remote_writer)))
     tasks.append(asyncio.create_task(pipe(remote_reader, local_writer)))
 
+
 async def fragemtn_data(local_reader, remote_writer):
     head = await local_reader.read(5)
     
@@ -73,23 +74,16 @@ async def fragemtn_data(local_reader, remote_writer):
         
         data = data[part_len:]
 
-    data = b''.join(parts)
+    remote_writer.write(b''.join(parts))
+    await remote_writer.drain()
 
-    while data:
-        data_len = random.randint(1, len(data))
-
-        remote_writer.write(data[0:data_len])
-        await remote_writer.drain()
-
-
-        data = data[data_len:]
             
 def debug():
     while True:
         pass
 
 if __name__ == "__main__":
-    print("Версия: 1.1")
+    print("Версия: 1.2")
     threading.Thread(target=debug).start()
     blocked = open("russia-blacklist.txt", "br").read().split()
     asyncio.run(main())

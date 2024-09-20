@@ -1,5 +1,5 @@
-# No DPI [ver. 1.1]
-Uses simple SSL and TCP fragmentation to avoid DPI.
+# No DPI [ver. 1.2]
+Uses simple SSL fragmentation to avoid DPI.
 No system privileges needed.
 
 Currently works in Russia.
