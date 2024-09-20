@@ -1,19 +1,19 @@
-import socket
 import threading
+def debug():
+    while 1:
+        pass      
+Thread(target=debug).start()  
+
+import socket
 import random
 import asyncio
-
 from utils import get_domain, get_local_ip
 from threading import Thread
-import time
-
 from os import urandom
-
 import yaml
 
 
 tasks = []
-
 
 def is_blocked(host):
     
@@ -43,15 +43,13 @@ async def ssl_conn(r, w):
     await make_pipe(r, w)
 
 
-
-
 async def main():
 
     if config["proxy"]:
         
         server = await asyncio.start_server(proxy_conn, "0.0.0.0", config["port"])
 
-        print(f'Прокси запущено на {local_ip}:{config["port"]}, 127.0.0.1:{config["port"]}')
+        print(f'Прокси запущено на {local_ip}:{config["port"]}')
 
     if config["dns"]:
         from dns import DNSServer, LocalResolve
@@ -61,7 +59,7 @@ async def main():
         dns_server = DNSServer(LocalResolve())
         dns_server.start_thread()
 
-        print(f'DNS сервер запущен {local_ip}, 127.0.0.1')
+        print(f'DNS сервер запущен {local_ip}')
 
     if config["fake"]:
         from fake import AsyncSniffer, listen_interface
@@ -97,13 +95,17 @@ async def make_pipe(local_reader, local_writer, host = None, port = 443):
         ip = resolve(host, config["dns_server"])
     else:
         ip = host
-    
-    remote_reader, remote_writer = await asyncio.open_connection(ip, port)
+
+    try:
+        remote_reader, remote_writer = await asyncio.open_connection(ip, port)
+    except:
+        local_writer.close()
+        return
 
 
     if is_blocked(host) and port == 443:
         await fragment(data, remote_writer)
-    else:
+    elif port == 443:
         remote_writer.write(head+data)
 
 
@@ -111,9 +113,6 @@ async def make_pipe(local_reader, local_writer, host = None, port = 443):
     tasks.append(asyncio.create_task(pipe(remote_reader, local_writer)))
 
     
-
-
-
 async def fragment(data, remote_writer):
 
     if config["fake"]:
@@ -150,18 +149,16 @@ async def fragment(data, remote_writer):
             del packets[local_port]
         
 
-def debug():
-    while 1:
-        pass         
+ 
 
 config = yaml.safe_load(open("config.txt").read())
 blocked = open("russia-blacklist.txt").read().split()
 local_ip = get_local_ip()
 
 if __name__ == "__main__":
-    Thread(target=debug).start()
+    
 
-    print("Версия: 2.0")
+    print("Версия: 2.1")
     print("Не закрывайте окно")
 
     asyncio.run(main())
