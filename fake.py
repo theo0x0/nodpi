@@ -69,10 +69,6 @@ def listen_interface(p):
 
         if tcp.name != "TCP":
             return
-
-        if tcp.dport == 56777 or tcp.sport== 56777:
-            tcp.show2()
-
         
         if tcp.sport in ports:
             packets[tcp.sport] = {}
