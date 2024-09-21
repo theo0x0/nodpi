@@ -4,14 +4,12 @@ from scapy.packet import Raw
 from scapy.layers.inet import IP, TCP
 from scapy.sendrecv import AsyncSniffer, sendp
 from os import urandom
-import asyncio
 
 ports = []
 packets = {}
 ttl = {}
 
 def send_packet(data, to_port):
-    #await asyncio.sleep(0.2)
     
     if not packets.get(to_port) or not ttl.get(to_port):
         return False
@@ -35,6 +33,9 @@ def send_packet(data, to_port):
     packets[to_port]["p"].payload.payload.flags = packets[to_port]["p"].payload.payload.flags.value ^ 2 | 8
 
     sendp(packets[to_port]["p"].build(), verbose=False)
+
+    ports.remove(to_port)
+    del packets[to_port]
 
     return True
 

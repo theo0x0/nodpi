@@ -152,16 +152,7 @@ async def fragment(data, remote_writer, host):
 
         remote_writer.write(data)
         await remote_writer.drain()
-
-        ports.remove(local_port)
-
-        if packets.get(local_port):
-            del packets[local_port]
             
-        
-        
-    
-        
         
 
  
