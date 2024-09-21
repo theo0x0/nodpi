@@ -217,7 +217,8 @@ class L2Socket(SuperSocket):
         self.promisc = conf.sniff_promisc if promisc is None else promisc
         self.ins = socket.socket(
             socket.AF_PACKET, socket.SOCK_RAW, socket.htons(type))
-        self.ins.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 0)
+        #print(111)
+        #self.ins.setsockopt(socket.SOL_SOCKET, socket.SO_RCVBUF, 6000000)
         if not nofilter:
             if conf.except_filter:
                 if filter:
@@ -236,7 +237,7 @@ class L2Socket(SuperSocket):
         self.ins.setsockopt(
             socket.SOL_SOCKET,
             socket.SO_RCVBUF,
-            conf.bufsize
+            6000000#conf.bufsize
         )
         # Receive Auxiliary Data (VLAN tags)
         try:

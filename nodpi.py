@@ -7,7 +7,7 @@ threading.Thread(target=debug).start()
 import socket
 import random
 import asyncio
-from utils import get_domain, get_local_ip
+from utils import get_domain, get_local_ip, fake_host
 from threading import Thread
 from os import urandom
 import yaml
@@ -26,12 +26,18 @@ def is_blocked(host):
 async def proxy_conn(r, w):
 
     http_data = await r.read(1500)
-    
-    type, target = http_data.split(b"\r\n")[0].split(b" ")[0:2]
-    host, port = target.split(b":")
+
+    try:
+        type, target = http_data.split(b"\r\n")[0].split(b" ")[0:2]
+        host, port = target.split(b":")
+    except:
+        w.close()
+        return
+        
 
     if type != b"CONNECT":
-        throw
+        w.close()
+        return
     
     w.write(b'HTTP/1.1 200 OK\n\n')
     await w.drain()
@@ -86,7 +92,6 @@ async def pipe(reader, writer):
 async def make_pipe(local_reader, local_writer, host = None, port = 443):
 
     if port == 443:
-        head = await local_reader.read(5)
         data = await local_reader.read(1500)
         host = get_domain(data)
 
@@ -104,49 +109,59 @@ async def make_pipe(local_reader, local_writer, host = None, port = 443):
 
 
     if is_blocked(host) and port == 443:
-        await fragment(data, remote_writer)
+        await fragment(data, remote_writer, host)
     elif port == 443:
-        remote_writer.write(head+data)
+        remote_writer.write(data)
 
 
     tasks.append(asyncio.create_task(pipe(local_reader, remote_writer)))
     tasks.append(asyncio.create_task(pipe(remote_reader, local_writer)))
 
     
-async def fragment(data, remote_writer):
+async def fragment(data, remote_writer, host):
+
+
+    if config["fragment"]:
+        parts = []
+        data = data[5:]
+
+        while data:
+            part_len = random.randint(1, len(data))
+            parts.append(bytes.fromhex("1603") + bytes([random.randint(0, 255)]) + int(part_len).to_bytes(2, byteorder='big') + data[0:part_len])
+            
+            data = data[part_len:]
+
+        data = b''.join(parts)
 
     if config["fake"]:
         from fake import send_packet, ports, packets
         _, local_port = remote_writer.transport.get_extra_info('socket').getsockname()
         ports.append(local_port)
-    
 
-    parts = []
+        fake_data = data.replace(host.encode(), fake_host(host).encode())
 
-    while data:
-        part_len = random.randint(1, len(data))
-        parts.append(bytes.fromhex("1603") + bytes([random.randint(0, 255)]) + int(part_len).to_bytes(2, byteorder='big') + data[0:part_len])
-        
-        data = data[part_len:]
+        while data:
+            remote_writer.write(data[:1])
+            await remote_writer.drain()
 
-    data = b''.join(parts)
+            data = data[1:]
+            fake_data = fake_data[1:]
 
-    while data:
-        data_len = random.randint(1, len(data))
-        remote_writer.write(data[0:data_len])
+            if send_packet(fake_data, local_port):
+                break
+
+        remote_writer.write(data)
         await remote_writer.drain()
 
-        if config["fake"]:
-            if random.randint(0, 5) == 0:
-                send_packet(local_port)
-
-        data = data[data_len:]
-        
-    if config["fake"]:
         ports.remove(local_port)
 
         if packets.get(local_port):
             del packets[local_port]
+            
+        
+        
+    
+        
         
 
  
@@ -158,7 +173,7 @@ local_ip = get_local_ip()
 if __name__ == "__main__":
     
 
-    print("Версия: 2.1")
+    print("Версия: 2.2")
     print("Не закрывайте окно")
 
     asyncio.run(main())

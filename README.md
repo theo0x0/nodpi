@@ -1,5 +1,5 @@
-# No DPI
-Uses simple SSL and TCP fragmentation and fake packets to avoid DPI.
+# No DPI [Ver. 2.2]
+Uses simple SSL fragmentation or fake packets to avoid DPI.
 No system privileges needed.
 
 Currently works in Russia.

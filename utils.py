@@ -1,4 +1,6 @@
 import socket
+import string
+import random
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -8,9 +10,12 @@ def get_local_ip():
 
     return ip
 
+def fake_host(host):
+    return "".join(random.choices(string.ascii_letters, k=len(host)-3)) + ".ru"
+
 def get_domain(data):
 
-    data = data[(4 + 2 + 32):]
+    data = data[(5 + 4 + 2 + 32):]
     
     len2 = int.from_bytes(data[:1], byteorder='big')
     data = data[(1 + len2):]
