@@ -107,8 +107,11 @@ async def make_pipe(local_reader, local_writer, host = None, port = 443):
         local_writer.close()
         return
 
+    if config["debug"]:
+        print("Новое подключение", host)
 
-    if is_blocked(host) and port == 443:
+
+    if (is_blocked(host) or config["debug"]) and port == 443:
         await fragment(data, remote_writer, host)
     elif port == 443:
         remote_writer.write(data)
@@ -151,7 +154,7 @@ async def fragment(data, remote_writer, host):
             data = data[1:]
             fake_data = fake_data[1:]
 
-            if config["fake_mode"] == 1 or  config["fake_mode"] == 4:
+            if config["fake_mode"] in [1, 4, 5, 6]:
                 if await send_packet(fake_data, local_port):
                     break
             else:

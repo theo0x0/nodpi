@@ -48,6 +48,14 @@ async def send_packet(data, to_port):
         packets[to_port]["p"].payload.dst = "8.8.8.8"
         packets[to_port]["p"].payload.payload.payload = Raw(data)
 
+    elif config["fake_mode"] == 5:
+        packets[to_port]["p"].payload.payload.dport = 53
+        packets[to_port]["p"].payload.payload.payload = Raw(data)
+
+    elif config["fake_mode"] == 6:
+        packets[to_port]["p"].payload.src = "8.8.8.8"
+        packets[to_port]["p"].payload.payload.payload = Raw(data)
+
     else:
         return False
 
@@ -55,6 +63,9 @@ async def send_packet(data, to_port):
 
     ports.remove(to_port)
     del packets[to_port]
+
+    if config["debug"]:
+        print("Фейковый пакет отправлен")
 
     return True
 
