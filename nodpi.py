@@ -163,8 +163,8 @@ async def fragment(data, remote_writer, host):
 
         #print(i)
 
-        remote_writer.write(data)
-        await remote_writer.drain()
+    remote_writer.write(data)
+    await remote_writer.drain()
             
         
 

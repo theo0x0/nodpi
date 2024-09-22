@@ -7,3 +7,5 @@ try:
     print("Блокировки по IP адресу нет")
 except:
     print("IP адрес заблокирован")
+
+input()
