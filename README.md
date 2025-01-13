@@ -5,7 +5,7 @@ No system privileges needed.
 Currently works in Russia.
 
 Alternatives: [GoodbyeDPI](https://github.com/ValdikSS/GoodbyeDPI)
-Next versions: [ver2](https://github.com/theo0x0/nodpi2), [v3aplha](https://github.com/theo0x0/nodpi3)
+Next versions: [ver2](https://github.com/theo0x0/nodpi2), [v3alpha](https://github.com/theo0x0/nodpi3)
 
 ## How to install
 
