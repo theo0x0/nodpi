@@ -4,8 +4,10 @@ No system privileges needed.
 
 Currently works in Russia. Uses blocklist from russia-blacklist.txt You need to add new domains there
 
-Alternatives: [GoodbyeDPI](https://github.com/ValdikSS/GoodbyeDPI), [zapret](https://github.com/bol-van/zapret)
-Next versions: [ver2](https://github.com/theo0x0/nodpi2), [v3alpha](https://github.com/theo0x0/nodpi3)
+Простой прокси скрипт для обхода блокировок или замедления ТСПУ в России 
+
+Alternatives: [GoodbyeDPI (Гудбай дипиай)](https://github.com/ValdikSS/GoodbyeDPI), [zapret (запрет)](https://github.com/bol-van/zapret)
+Next versions: [No DPI 2](https://github.com/theo0x0/nodpi2), [No DPI 3 (Alpha)](https://github.com/theo0x0/nodpi3)
 
 ## How to install
 
