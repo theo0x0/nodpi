@@ -2,7 +2,7 @@
 Uses simple SSL fragmentation to avoid DPI.
 No system privileges needed.
 
-Currently works in Russia. Uses blocklist from russia-blacklist.txt You need to add new domains there
+Currently works in Russia. Uses blocklist from russia-blacklist.txt You need to add new domains there or you can delete or rename this file to apply filter to all sites.
 
 Простой прокси скрипт для обхода блокировок или замедления ТСПУ в России 
 
