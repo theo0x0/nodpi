@@ -62,7 +62,7 @@ async def fragemtn_data(local_reader, remote_writer):
     parts = []
 
 
-    if all([data.find(site) == -1 for site in blocked]):
+    if blocked and all([data.find(site) == -1 for site in blocked]):
         remote_writer.write(head + data)
         await remote_writer.drain()
 
@@ -85,5 +85,8 @@ def debug():
 if __name__ == "__main__":
     print("Версия: 1.2")
     threading.Thread(target=debug).start()
-    blocked = open("russia-blacklist.txt", "br").read().split()
+    try:
+        blocked = open("russia-blacklist.txt", "br").read().split()
+    except:
+        pass
     asyncio.run(main())
